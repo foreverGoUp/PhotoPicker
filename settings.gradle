@@ -1,0 +1,2 @@
+rootProject.name='PhotoPicker'
+include ':app'
