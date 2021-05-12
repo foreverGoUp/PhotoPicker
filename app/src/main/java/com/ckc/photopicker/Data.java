@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class Data {
 
-    public static List<PhotoFolder> getPhotoFolders(Context context){
+    public static List<PhotoFolder> getPhotoFolders(Context context) throws Exception{
         List<PhotoFolder> photoFolders = new ArrayList<>();
 
         String[] projection = new String[] {

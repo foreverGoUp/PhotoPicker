@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.ckc.photopicker.RectRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="150dp">
     <ImageView
         android:id="@+id/photo_picker_iv_photo"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/holo_red_dark"/>
+        android:layout_height="match_parent" />
     <View
-        android:visibility="visible"
+        android:visibility="invisible"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#80000000"/>
@@ -17,13 +16,12 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true">
         <TextView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_margin="10dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_margin="8dp"
             android:background="@drawable/photo_picker_bg_selection_indicator"
             android:gravity="center"
-            android:text="8"
-            android:textSize="16sp"
+            android:text="5"
             android:textColor="@android:color/white"/>
     </RelativeLayout>
-</RelativeLayout>
+</com.ckc.photopicker.RectRelativeLayout>
