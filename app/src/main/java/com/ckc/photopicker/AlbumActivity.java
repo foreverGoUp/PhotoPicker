@@ -14,10 +14,13 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,11 +38,13 @@ public class AlbumActivity extends AppCompatActivity {
 
     private LinearLayout llContainer, llTitleBar, llSwitchAlbum;
     private ImageView ivArrow;
+    private Button btComplete;
     private PopupWindow popupWindow;
     private RecyclerView rvAlbumContent;
-    private AlbumContentAdapter albumContentAdapter = new AlbumContentAdapter();
+    private AlbumContentAdapter albumContentAdapter;
     private AlbumListAdapter albumListAdapter;
     private List<PhotoFolder> photoFolders;
+    private SelectionCollector selectionCollector = new SelectionCollector(9);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +53,7 @@ public class AlbumActivity extends AppCompatActivity {
         rvAlbumContent = findViewById(R.id.photo_picker_rv_album_content);
         llContainer = findViewById(R.id.photo_picker_ll_container);
         llTitleBar = findViewById(R.id.photo_picker_ll_title_bar);
+        btComplete = findViewById(R.id.photo_picker_bt_complete);
         ivArrow = findViewById(R.id.photo_picker_iv_arrow);
         llSwitchAlbum = findViewById(R.id.photo_picker_ll_switch_album);
         llSwitchAlbum.setOnClickListener(v -> {
@@ -56,10 +62,16 @@ public class AlbumActivity extends AppCompatActivity {
             showAlbumList();
         });
 
-
+        albumContentAdapter = new AlbumContentAdapter(selectionCollector);
         rvAlbumContent.setLayoutManager(new GridLayoutManager(this, 4));
+        rvAlbumContent.getItemAnimator().setChangeDuration(0);
         rvAlbumContent.addItemDecoration(new GridDividerItemDecoration(this.getApplicationContext(), 5f));
         rvAlbumContent.setAdapter(albumContentAdapter);
+        albumContentAdapter.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(int pos, Object object) {
+            }
+        });
 
         albumListAdapter = new AlbumListAdapter(new OnItemClickListener() {
             @Override
@@ -89,6 +101,14 @@ public class AlbumActivity extends AppCompatActivity {
                         albumContentAdapter.setData(finalPhotoFolders.get(0).getPhotos());
                     }
                 });
+            }
+        });
+
+        selectionCollector.setOnSelectChangeListener(new SelectionCollector.OnSelectChangeListener() {
+            @Override
+            public void onSelectChange(int maxSelectableNum, int selectedNum) {
+                btComplete.setText(getString(R.string.photo_picker_complete_i1_i2, selectedNum, maxSelectableNum));
+                btComplete.setEnabled(selectedNum > 0);
             }
         });
     }
@@ -239,8 +259,20 @@ public class AlbumActivity extends AppCompatActivity {
     private static class AlbumContentAdapter extends RecyclerView.Adapter<AlbumContentViewHolder>{
 
         private List<Photo> data = new ArrayList<>();
+        private OnItemClickListener onItemClickListener;
+        private OnItemClickListener onSelectionClickListener;
+        private SelectionCollector selectionCollector;
 
-        public AlbumContentAdapter() {
+        public AlbumContentAdapter(SelectionCollector selectionCollector) {
+            this.selectionCollector = selectionCollector;
+        }
+
+        public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
+            this.onItemClickListener = onItemClickListener;
+        }
+
+        public void setOnSelectionClickListener(OnItemClickListener onSelectionClickListener) {
+            this.onSelectionClickListener = onSelectionClickListener;
         }
 
         @NonNull
@@ -255,6 +287,31 @@ public class AlbumActivity extends AppCompatActivity {
                     .load(data.get(position).getUri())
                     .optionalCenterCrop()
                     .into(holder.ivPhoto);
+
+            int index = selectionCollector.selectedIndex(data.get(position));
+            if (index > 0){
+                holder.tvSelectionIndicator.setSelected(true);
+                holder.tvSelectionIndicator.setText(String.valueOf(index));
+                holder.vSelectedShadow.setVisibility(View.VISIBLE);
+            }else {
+                holder.tvSelectionIndicator.setSelected(false);
+                holder.tvSelectionIndicator.setText(null);
+                holder.vSelectedShadow.setVisibility(View.INVISIBLE);
+            }
+
+            holder.itemView.setOnClickListener(v->{
+                onItemClickListener.onItemClick(position, data.get(position));
+            });
+            holder.rlSelection.setOnClickListener(v->{
+                int selectResult = selectionCollector.select(data.get(position));
+                if (selectResult < 0){
+                    notifyDataSetChanged();
+                }else if (selectResult == 0){
+                    Toast.makeText(holder.itemView.getContext(), "最多选择9张", Toast.LENGTH_SHORT).show();
+                }else {
+                    notifyItemChanged(position);
+                }
+            });
         }
 
         @Override
@@ -271,10 +328,16 @@ public class AlbumActivity extends AppCompatActivity {
     private static class AlbumContentViewHolder extends RecyclerView.ViewHolder{
 
         ImageView ivPhoto;
+        RelativeLayout rlSelection;
+        TextView tvSelectionIndicator;
+        View vSelectedShadow;
 
         public AlbumContentViewHolder(@NonNull View itemView) {
             super(itemView);
             ivPhoto = itemView.findViewById(R.id.photo_picker_iv_photo);
+            rlSelection = itemView.findViewById(R.id.photo_picker_rl_selection);
+            tvSelectionIndicator = itemView.findViewById(R.id.photo_picker_tv_selection_indicator);
+            vSelectedShadow = itemView.findViewById(R.id.photo_picker_v_selected_shadow);
         }
     }
 

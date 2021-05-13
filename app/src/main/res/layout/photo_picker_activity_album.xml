@@ -51,6 +51,7 @@
             android:layout_weight="1"/>
 
         <Button
+            android:id="@+id/photo_picker_bt_complete"
             android:enabled="false"
             android:layout_width="wrap_content"
             android:layout_height="35dp"
