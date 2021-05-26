@@ -15,7 +15,7 @@ import java.util.List;
 public class SelectionCollector {
 
     private int maxSelectableNum;//最大可选数量
-    private List<Photo> selectedItems = new ArrayList<>();
+    List<Photo> selectedItems = new ArrayList<>();
     private OnSelectChangeListener onSelectChangeListener;
 
     public void setOnSelectChangeListener(OnSelectChangeListener onSelectChangeListener) {
@@ -40,7 +40,7 @@ public class SelectionCollector {
     public int select(Photo photo){
         if (selectedItems.contains(photo)){
             selectedItems.remove(photo);
-            onSelectChanged();
+            notifySelectChanged();
             return -1;
         }else{
             int size = selectedItems.size();
@@ -48,13 +48,13 @@ public class SelectionCollector {
                 return 0;
             }else {
                 selectedItems.add(photo);
-                onSelectChanged();
+                notifySelectChanged();
                 return size + 1;
             }
         }
     }
 
-    private void onSelectChanged(){
+    public void notifySelectChanged(){
         if (onSelectChangeListener != null) onSelectChangeListener.onSelectChange(maxSelectableNum, selectedItems.size());
     }
 

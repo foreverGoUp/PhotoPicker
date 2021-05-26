@@ -2,4 +2,5 @@
     <string name="app_name">PhotoPicker</string>
     <string name="photo_picker_name_of_album_all">所有图片</string>
     <string name="photo_picker_complete_i1_i2">完成(%d/%d)</string>
+    <string name="photo_picker_preview_i">预览(%d)</string>
 </resources>

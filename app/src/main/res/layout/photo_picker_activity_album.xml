@@ -68,13 +68,15 @@
         android:layout_width="match_parent"
         android:layout_height="50dp">
         <TextView
+            android:id="@+id/photo_picker_tv_preview"
             android:enabled="false"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
             android:layout_centerVertical="true"
             android:layout_marginLeft="15dp"
             android:textColor="@color/photo_picker_preview_text"
             android:textSize="17sp"
-            android:text="预览(3)"/>
+            android:text="预览"/>
     </RelativeLayout>
 </LinearLayout>

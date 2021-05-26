@@ -21,6 +21,18 @@ import java.util.List;
  */
 public class Data {
 
+    private static Data data;
+
+    public static Data getInstance(){
+        if (data == null){
+            data = new Data();
+        }
+        return data;
+    }
+
+    List<Photo> currentAlbumPhotos;
+    SelectionCollector selectionCollector;
+
     public static List<PhotoFolder> getPhotoFolders(Context context) throws Exception{
         List<PhotoFolder> photoFolders = new ArrayList<>();
 
