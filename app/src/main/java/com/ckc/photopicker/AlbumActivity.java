@@ -71,7 +71,8 @@ public class AlbumActivity extends AppCompatActivity {
         tvPreview.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Data.getInstance().currentAlbumPhotos = selectionCollector.selectedItems;
+                Data.getInstance().currentAlbumPhotos = new ArrayList<>();
+                Data.getInstance().currentAlbumPhotos.addAll(selectionCollector.selectedItems);
                 PreviewActivity.start(AlbumActivity.this, 0, REQ_CODE_PREVIEW);
             }
         });

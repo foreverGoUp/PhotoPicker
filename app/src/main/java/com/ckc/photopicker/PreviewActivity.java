@@ -89,7 +89,7 @@ public class PreviewActivity extends AppCompatActivity {
                 tvPhotoIndex.setText((currentPhotoPos+1) + "/" + photoNum);
             }
         });
-        rvPhotoList.smoothScrollToPosition(currentPhotoPos);
+        rvPhotoList.scrollToPosition(currentPhotoPos);
 
         photoNum = photoListAdapter.data.size();
         tvPhotoIndex.setText((currentPhotoPos+1) + "/" + photoNum);
