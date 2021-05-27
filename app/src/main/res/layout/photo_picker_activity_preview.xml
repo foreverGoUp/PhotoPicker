@@ -45,6 +45,10 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
+            <com.ckc.photopicker.GestureImageView
+                android:id="@+id/photo_picker_giv_photo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/photo_picker_rv_photo_list"
                 android:layout_width="match_parent"

@@ -38,6 +38,7 @@ public class PreviewActivity extends AppCompatActivity {
     TextView tvPhotoIndex;
     Button btComplete;
     LinearLayout llSelect;
+    ImageView ivPhoto;
 
     private PhotoListAdapter photoListAdapter;
     private SelectionCollector selectionCollector;
@@ -51,6 +52,7 @@ public class PreviewActivity extends AppCompatActivity {
         tvPhotoIndex = findViewById(R.id.photo_picker_tv_photo_index);
         llSelect = findViewById(R.id.photo_picker_ll_select);
         btComplete = findViewById(R.id.photo_picker_bt_complete);
+        ivPhoto = findViewById(R.id.photo_picker_giv_photo);
 
         findViewById(R.id.photo_picker_iv_back).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,6 +89,13 @@ public class PreviewActivity extends AppCompatActivity {
                 llSelect.setSelected(index > 0);
 
                 tvPhotoIndex.setText((currentPhotoPos+1) + "/" + photoNum);
+
+                Glide.with(PreviewActivity.this)
+                        .load(photo.getUri())
+//                        .optionalCenterCrop()
+                        .into(ivPhoto);
+
+//                ivPhoto.setImageDrawable(getDrawable(R.drawable.photo_picker_ic_selected));
             }
         });
         rvPhotoList.scrollToPosition(currentPhotoPos);
