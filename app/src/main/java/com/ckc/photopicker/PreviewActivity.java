@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.ViewPager;
 
 import com.bumptech.glide.Glide;
 
@@ -38,7 +39,8 @@ public class PreviewActivity extends AppCompatActivity {
     TextView tvPhotoIndex;
     Button btComplete;
     LinearLayout llSelect;
-    ImageView ivPhoto;
+//    GestureImageView ivPhoto;
+    MyViewPager viewPager;
 
     private PhotoListAdapter photoListAdapter;
     private SelectionCollector selectionCollector;
@@ -52,7 +54,8 @@ public class PreviewActivity extends AppCompatActivity {
         tvPhotoIndex = findViewById(R.id.photo_picker_tv_photo_index);
         llSelect = findViewById(R.id.photo_picker_ll_select);
         btComplete = findViewById(R.id.photo_picker_bt_complete);
-        ivPhoto = findViewById(R.id.photo_picker_giv_photo);
+//        ivPhoto = findViewById(R.id.photo_picker_giv_photo);
+        viewPager = findViewById(R.id.photo_picker_vp);
 
         findViewById(R.id.photo_picker_iv_back).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -83,28 +86,13 @@ public class PreviewActivity extends AppCompatActivity {
         photoListAdapter.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(int pos, Object object) {
+                if (pos == currentPhotoPos) return;
                 currentPhotoPos = pos;
                 Photo photo = (Photo) object;
-                int index = selectionCollector.selectedIndex(photo);
-                llSelect.setSelected(index > 0);
-
-                tvPhotoIndex.setText((currentPhotoPos+1) + "/" + photoNum);
-
-                Glide.with(PreviewActivity.this)
-                        .load(photo.getUri())
-//                        .optionalCenterCrop()
-                        .into(ivPhoto);
-
-//                ivPhoto.setImageDrawable(getDrawable(R.drawable.photo_picker_ic_selected));
+                onItemClickHandle(photo);
             }
         });
         rvPhotoList.scrollToPosition(currentPhotoPos);
-
-        photoNum = photoListAdapter.data.size();
-        tvPhotoIndex.setText((currentPhotoPos+1) + "/" + photoNum);
-
-        int index = selectionCollector.selectedIndex(photoListAdapter.data.get(currentPhotoPos));
-        llSelect.setSelected(index > 0);
 
         llSelect.setOnClickListener(v -> {
             int selectResult = selectionCollector.select(photoListAdapter.data.get(currentPhotoPos));
@@ -115,6 +103,36 @@ public class PreviewActivity extends AppCompatActivity {
                 llSelect.setSelected(selectResult > 0);
             }
         });
+
+        MyPagerAdapter adapter = new MyPagerAdapter(this, photoListAdapter.data);
+        viewPager.setAdapter(adapter);
+        viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener(){
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                photoListAdapter.setCurrentItem(position);
+                rvPhotoList.smoothScrollToPosition(position);
+            }
+        });
+
+//        ivPhoto.setOnClickListener(v -> {
+//            rvPhotoList.setVisibility(rvPhotoList.getVisibility() == View.VISIBLE ? View.GONE:View.VISIBLE);
+//        });
+
+        photoNum = photoListAdapter.data.size();
+        onItemClickHandle(photoListAdapter.data.get(currentPhotoPos));
+    }
+
+    private void onItemClickHandle(Photo photo){
+        int index = selectionCollector.selectedIndex(photo);
+        llSelect.setSelected(index > 0);
+
+        tvPhotoIndex.setText((currentPhotoPos+1) + "/" + photoNum);
+
+//        Glide.with(PreviewActivity.this)
+//                .load(photo.getUri())
+//                .into(ivPhoto);
+        viewPager.setCurrentItem(currentPhotoPos);
     }
 
     private static class PhotoListAdapter extends RecyclerView.Adapter<PreviewActivity.PhotoListViewHolder> {
@@ -156,12 +174,17 @@ public class PreviewActivity extends AppCompatActivity {
             holder.vSelectedShadow.setVisibility(index > 0?View.VISIBLE:View.INVISIBLE);
 
             holder.itemView.setOnClickListener(v -> {
-                lastCurrentPhotoPos = currentPhotoPos;
-                currentPhotoPos = position;
-                notifyItemChanged(lastCurrentPhotoPos);
-                notifyItemChanged(currentPhotoPos);
-                onItemClickListener.onItemClick(position, data.get(position));
+                setCurrentItem(position);
             });
+        }
+
+        public void setCurrentItem(int position){
+            if(position == currentPhotoPos) return;
+            lastCurrentPhotoPos = currentPhotoPos;
+            currentPhotoPos = position;
+            notifyItemChanged(lastCurrentPhotoPos);
+            notifyItemChanged(currentPhotoPos);
+            onItemClickListener.onItemClick(position, data.get(position));
         }
 
         @Override

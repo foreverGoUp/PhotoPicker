@@ -33,6 +33,7 @@
             android:layout_marginLeft="10dp"
             android:background="@drawable/photo_picker_bg_album_switch">
             <TextView
+                android:id="@+id/photo_picker_tv_album_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="图片和视频"

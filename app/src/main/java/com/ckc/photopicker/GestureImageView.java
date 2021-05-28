@@ -36,13 +36,15 @@ public class GestureImageView extends AppCompatImageView {
     private float drawableWidth, drawableHeight;
     private float viewWidth, viewHeight;
     private GestureDetector gestureDetector;
+    private OnClickListener onClickListener;
 
     public GestureImageView(@NonNull Context context) {
-        super(context);
+        this(context, null);
     }
 
     public GestureImageView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        //设置缩放类型为矩阵，否则setImageMatrix不会生效
         setScaleType(ScaleType.MATRIX);
 
         //GestureDetector的实例生成
@@ -86,12 +88,21 @@ public class GestureImageView extends AppCompatImageView {
         scaleGestureDetector.setQuickScaleEnabled(false);
 
         gestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener(){
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                Log.e(TAG, "-------------onSingleTapUp");
+                if (onClickListener != null) onClickListener.onClick(GestureImageView.this);
+                return super.onSingleTapUp(e);
+            }
+
             @Override
             public boolean onDoubleTap(MotionEvent e) {
                 RectF rect = getDisplayRect(getDrawMatrix());
                 float scaleFactor = Math.min(viewWidth/rect.width(), viewHeight/rect.height());
                 if(scaleFactor > 0.9){
-                    mSuppMatrix.postScale(2, 2, viewWidth/2, viewHeight/2);
+//                    Log.e(TAG, "onTouch scaleGestureDetector e.getX()="+e.getX()+",e.getY()="+e.getY());
+                    mSuppMatrix.postScale(2, 2, e.getX(), e.getY());
                     setImageMatrix(getDrawMatrix());
                 }else {
                     mSuppMatrix.postScale(scaleFactor, scaleFactor, viewWidth/2, viewHeight/2);
@@ -102,13 +113,13 @@ public class GestureImageView extends AppCompatImageView {
 
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                Log.e(TAG, "+++++++++++onScroll distanceX="+distanceX+",distanceY="+distanceY);
+//                Log.e(TAG, "+++++++++++onScroll distanceX="+distanceX+",distanceY="+distanceY);
                 //dis<0为向右或下滑动
                 RectF rect = getDisplayRect(getDrawMatrix());
                 if(rect.width() > viewWidth || rect.height() > viewHeight){
                     mSuppMatrix.postTranslate(-distanceX, -distanceY);
                     RectF rect2 = getDisplayRect(getDrawMatrix());//RectF(-729.8274, -782.89996, 812.1499, 1958.3931)
-                    Log.e(TAG, "+++++++++++onScroll handle rect2="+rect2.toString());
+//                    Log.e(TAG, "+++++++++++onScroll handle rect2="+rect2.toString());
                     float dx = 0,dy = 0;
                     if (distanceX < 0){
                         if(rect2.left <= 0){
@@ -148,26 +159,51 @@ public class GestureImageView extends AppCompatImageView {
             }
         });
 
-        setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                boolean handled = false;
-                scaleGestureDetector.onTouchEvent(event);
-                handled = scaleGestureDetector.isInProgress();
+        setOnTouchListener(onTouchListener);
+    }
+
+    private OnTouchListener onTouchListener = new OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            Log.e(TAG, "2 event="+event.getAction());
+            boolean handled;
+            scaleGestureDetector.onTouchEvent(event);
+            handled = scaleGestureDetector.isInProgress();
 //                Log.e(TAG, "onTouch scaleGestureDetector isInProgress="+handled);
-                if (handled) return true;
-                handled = gestureDetector.onTouchEvent(event);
+            if (handled) return true;
+            handled = gestureDetector.onTouchEvent(event);
 //                Log.e(TAG, "onTouch gestureDetector.onTouchEvent="+handled);
-                if(handled) return true;
-                return true;
-            }
-        });
+            if(handled) return true;
+            return handled;
+        }
+    };
+
+    @Override
+    public void setOnClickListener(OnClickListener onClickListener) {
+        super.setOnClickListener(null);
+        this.onClickListener = onClickListener;
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.e(TAG, "1 event="+event.getAction());
+//        getParent().requestDisallowInterceptTouchEvent(true);
+        if(event.getAction() == MotionEvent.ACTION_DOWN){
+//            getParent().requestDisallowInterceptTouchEvent(true);
+            return true;
+        }
+//        return super.onTouchEvent(event);
+
+        return super.onTouchEvent(event);
     }
 
     @Override
     public void setImageDrawable(@Nullable Drawable drawable) {
         super.setImageDrawable(drawable);
         if (drawable == null) return;
+        mBaseMatrix = new Matrix();
+        mSuppMatrix = new Matrix();
+
         drawableWidth = drawable.getIntrinsicWidth();
         drawableHeight = drawable.getIntrinsicHeight();
 
@@ -177,8 +213,6 @@ public class GestureImageView extends AppCompatImageView {
         RectF mTempDst = new RectF(0, 0, viewWidth, viewHeight);
         mBaseMatrix.setRectToRect(mTempScr, mTempDst, Matrix.ScaleToFit.CENTER);
         mDrawableMatrix.set(mBaseMatrix);
-//        float[] values = new float[] { 1.0f, 0, 200, 0, 1.0f, 100, 0, 0, 1.0f };
-//        mDrawableMatrix.setValues(values);
         setImageMatrix(mDrawableMatrix);
     }
 

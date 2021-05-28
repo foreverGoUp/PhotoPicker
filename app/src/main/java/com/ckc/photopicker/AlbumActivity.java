@@ -41,7 +41,7 @@ public class AlbumActivity extends AppCompatActivity {
     private LinearLayout llContainer, llTitleBar, llSwitchAlbum;
     private ImageView ivArrow;
     private Button btComplete;
-    private TextView tvPreview;
+    private TextView tvPreview, tvAlbumName;
     private PopupWindow popupWindow;
     private RecyclerView rvPhotoList;
     private PhotoListAdapter photoListAdapter;
@@ -56,6 +56,7 @@ public class AlbumActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.photo_picker_activity_album);
         tvPreview = findViewById(R.id.photo_picker_tv_preview);
+        tvAlbumName = findViewById(R.id.photo_picker_tv_album_name);
         rvPhotoList = findViewById(R.id.photo_picker_rv_album_content);
         llContainer = findViewById(R.id.photo_picker_ll_container);
         llTitleBar = findViewById(R.id.photo_picker_ll_title_bar);
@@ -94,6 +95,7 @@ public class AlbumActivity extends AppCompatActivity {
             @Override
             public void onItemClick(int pos, Object object) {
                 PhotoFolder photoFolder = (PhotoFolder) object;
+                tvAlbumName.setText(photoFolder.getName());
                 photoListAdapter.setData(photoFolder.getPhotos());
                 showAlbumList();
             }
@@ -114,6 +116,7 @@ public class AlbumActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         AlbumActivity.this.photoFolders = finalPhotoFolders;
+                        tvAlbumName.setText(finalPhotoFolders.get(0).getName());
                         albumListAdapter.setData(finalPhotoFolders);
                         photoListAdapter.setData(finalPhotoFolders.get(0).getPhotos());
                     }
