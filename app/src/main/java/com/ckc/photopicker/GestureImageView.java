@@ -106,25 +106,42 @@ public class GestureImageView extends AppCompatImageView {
                 //dis<0为向右或下滑动
                 RectF rect = getDisplayRect(getDrawMatrix());
                 if(rect.width() > viewWidth || rect.height() > viewHeight){
-                    mSuppMatrix.postTranslate(distanceX, 0);
+                    mSuppMatrix.postTranslate(-distanceX, -distanceY);
                     RectF rect2 = getDisplayRect(getDrawMatrix());//RectF(-729.8274, -782.89996, 812.1499, 1958.3931)
                     Log.e(TAG, "+++++++++++onScroll handle rect2="+rect2.toString());
-                    if (distanceX > 0){
-                        if(rect2.left >=0){
-                            setImageMatrix(getDrawMatrix());
-                        }else if(rect2.left < 0){
-                            mSuppMatrix.postTranslate(-rect2.left, 0);
-                            setImageMatrix(getDrawMatrix());
+                    float dx = 0,dy = 0;
+                    if (distanceX < 0){
+                        if(rect2.left <= 0){
+                            dx = 0;
+                        }else{//rect2.left > 0
+                            dx = -rect2.left;
+                        }
+                    }else {//distanceX > 0
+                        if(rect2.right >= viewWidth){
+                            dx = 0;
+                        }else{//rect2.right < viewWidth
+                            dx = viewWidth-rect2.right;
                         }
                     }
-//                    else {
-//                        if(rect2.right >=0){
-//                            setImageMatrix(getDrawMatrix());
-//                        }else if(rect2.left < 0){
-//                            mSuppMatrix.postTranslate(-rect2.left, 0);
-//                            setImageMatrix(getDrawMatrix());
-//                        }
-//                    }
+
+                    if (distanceY < 0){
+                        if(rect2.top <= 0){
+                            dy = 0;
+                        }else{//rect2.top > 0
+                            dy = -rect2.top;
+                        }
+                    }else {//distanceX > 0
+                        if(rect2.bottom >= viewHeight){
+                            dy = 0;
+                        }else{//rect2.bottom < viewHeight
+                            dy = viewHeight-rect2.bottom;
+                        }
+                    }
+
+                    if(dx != 0 || dy != 0){
+                        mSuppMatrix.postTranslate(dx, dy);
+                    }
+                    setImageMatrix(getDrawMatrix());
                     return true;
                 }
                 return super.onScroll(e1, e2, distanceX, distanceY);
