@@ -1,7 +1,6 @@
 package com.ckc.photopicker;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -16,19 +15,17 @@ import java.util.List;
 
 /**
  * <pre>
- *     author : 陈孔财
- *     e-mail : chenkongcai@lexiangbao.com
  *     time   : 2021/5/28
- *     desc   :
+ *     desc   : 浏览大图翻页ViewPager适配器
  *     version: 1.0
  * </pre>
  */
-public class MyPagerAdapter extends PagerAdapter {
+public class ViewBigImagePagerAdapter extends PagerAdapter {
 
     List<Photo> data;
     List<GestureImageView> gestureImageViews = new ArrayList<>(10);
 
-    public MyPagerAdapter(Context context, List<Photo> data) {
+    public ViewBigImagePagerAdapter(Context context, List<Photo> data) {
         this.data = data;
         for (int i = 0; i < 10; i++) {
             gestureImageViews.add(new GestureImageView(context));
@@ -48,13 +45,11 @@ public class MyPagerAdapter extends PagerAdapter {
     @NonNull
     @Override
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
-        Log.e("22222222222", "instantiateItem position="+position);
+//        Log.e("22222222222", "instantiateItem position="+position);
         ViewPager viewPager = (ViewPager) container;
-//        int currentPos = viewPager.getCurrentItem();
         GestureImageView view = gestureImageViews.get(0);
         gestureImageViews.remove(0);
         gestureImageViews.add(view);
-//        posViewMap.put(position, view);
 
         Glide.with(container.getContext())
                 .load(data.get(position).getUri())

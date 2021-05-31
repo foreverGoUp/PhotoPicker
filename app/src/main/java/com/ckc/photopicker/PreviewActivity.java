@@ -26,8 +26,6 @@ import java.util.List;
 
 /**
  * <pre>
- *     author : 陈孔财
- *     e-mail : chenkongcai@lexiangbao.com
  *     time   : 2021/5/26
  *     desc   :
  *     version: 1.0
@@ -40,7 +38,7 @@ public class PreviewActivity extends AppCompatActivity {
     Button btComplete;
     LinearLayout llSelect;
 //    GestureImageView ivPhoto;
-    MyViewPager viewPager;
+    ViewPager viewPager;
 
     private PhotoListAdapter photoListAdapter;
     private SelectionCollector selectionCollector;
@@ -104,7 +102,7 @@ public class PreviewActivity extends AppCompatActivity {
             }
         });
 
-        MyPagerAdapter adapter = new MyPagerAdapter(this, photoListAdapter.data);
+        ViewBigImagePagerAdapter adapter = new ViewBigImagePagerAdapter(this, photoListAdapter.data);
         viewPager.setAdapter(adapter);
         viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener(){
             @Override

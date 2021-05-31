@@ -18,8 +18,6 @@ import androidx.appcompat.widget.AppCompatImageView;
 
 /**
  * <pre>
- *     author : 陈孔财
- *     e-mail : chenkongcai@lexiangbao.com
  *     time   : 2021/5/27
  *     desc   :
  *     version: 1.0

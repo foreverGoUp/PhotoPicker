@@ -5,8 +5,6 @@ import java.util.List;
 
 /**
  * <pre>
- *     author : 陈孔财
- *     e-mail : chenkongcai@lexiangbao.com
  *     time   : 2021/5/13
  *     desc   : 选择收集器
  *     version: 1.0

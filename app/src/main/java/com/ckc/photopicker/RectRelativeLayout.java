@@ -6,8 +6,6 @@ import android.widget.RelativeLayout;
 
 /**
  * <pre>
- *     author : 陈孔财
- *     e-mail : chenkongcai@lexiangbao.com
  *     time   : 2020/8/31
  *     desc   :
  *     version: 1.0
