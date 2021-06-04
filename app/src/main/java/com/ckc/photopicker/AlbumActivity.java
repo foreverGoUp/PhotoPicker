@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.transition.Slide;
@@ -51,6 +52,8 @@ public class AlbumActivity extends AppCompatActivity {
 
     private static final int REQ_CODE_PREVIEW = 1;
 
+    Uri takePhotoFileUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,9 +75,10 @@ public class AlbumActivity extends AppCompatActivity {
         tvPreview.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Data.getInstance().currentAlbumPhotos = new ArrayList<>();
-                Data.getInstance().currentAlbumPhotos.addAll(selectionCollector.selectedItems);
-                PreviewActivity.start(AlbumActivity.this, 0, REQ_CODE_PREVIEW);
+//                Data.getInstance().currentAlbumPhotos = new ArrayList<>();
+//                Data.getInstance().currentAlbumPhotos.addAll(selectionCollector.selectedItems);
+//                PreviewActivity.start(AlbumActivity.this, 0, REQ_CODE_PREVIEW);
+                takePhotoFileUri = Data.takePhoto(AlbumActivity.this, 2);
             }
         });
 
@@ -146,6 +150,9 @@ public class AlbumActivity extends AppCompatActivity {
             selectionCollector.setOnSelectChangeListener(onSelectChangeListener);
             photoListAdapter.notifyDataSetChanged();
             selectionCollector.notifySelectChanged();
+        }
+        if (requestCode == 2){
+            Data.cropPhoto(AlbumActivity.this, takePhotoFileUri, 3);
         }
     }
 

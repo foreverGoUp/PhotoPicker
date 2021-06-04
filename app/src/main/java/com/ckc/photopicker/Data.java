@@ -1,14 +1,22 @@
 package com.ckc.photopicker;
 
+import android.app.Activity;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 
+import androidx.core.content.FileProvider;
+
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * <pre>
@@ -111,5 +119,62 @@ public class Data {
         albumAllFolder.setPhotos(allPhotos);
         photoFolders.add(0, albumAllFolder);
         return photoFolders;
+    }
+    //拍照
+    public static Uri takePhoto(Activity activity, int reqCode){
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        takePictureIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        File tempFile = new File(activity.getExternalCacheDir().getAbsolutePath());
+        tempFile = createTempFile(tempFile, "capture_", ".jpg");
+        Uri uri;
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) {
+            uri = Uri.fromFile(tempFile);
+        } else {
+            uri = FileProvider.getUriForFile(activity, activity.getPackageName()+".photo_picker_provider", tempFile);
+            takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+        activity.startActivityForResult(takePictureIntent, reqCode);
+        return uri;
+    }
+
+    /**
+     * 根据系统时间、前缀、后缀产生一个文件
+     */
+    static File createTempFile(File folder, String prefix, String suffix) {
+        if (!folder.exists() || !folder.isDirectory()) folder.mkdirs();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA);
+        String filename = prefix + dateFormat.format(new Date(System.currentTimeMillis())) + suffix;
+        return new File(folder, filename);
+    }
+
+    //裁剪图片
+    static Uri cropPhoto(Activity activity, Uri uri, int reqCode) {
+        Intent intent = new Intent("com.android.camera.action.CROP");
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//            uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileprovider", new File(uri.getPath()));
+//            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+//        }
+        intent.setDataAndType(uri, "image/*");
+        // 下面这个crop=true是设置在开启的Intent中设置显示的VIEW可裁剪
+        intent.putExtra("crop", "true");
+        // aspectX aspectY 是宽高的比例
+        intent.putExtra("aspectX", 1);
+        intent.putExtra("aspectY", 1);
+        // outputX outputY 是裁剪图片宽高
+        intent.putExtra("outputX", 150);
+        intent.putExtra("outputY", 150);
+        intent.putExtra("circleCrop", 1);//无效，可能值不对。但即使该行注释了，打开也是圆形的剪裁风格，但实际输出方形图片。
+        intent.putExtra("return-data", false);
+//        intent.putExtra("scale", true);
+//        intent.putExtra("scaleUpIfNeeded", true);
+//        intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
+
+        File tempFile = createTempFile(new File(activity.getExternalCacheDir().getAbsolutePath()), "crop_", ".jpg");
+        Uri outputUri = Uri.fromFile(tempFile);//不需要contentUri,可能是系统bug。
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, outputUri);
+        activity.startActivityForResult(intent, reqCode);
+        return outputUri;
     }
 }
