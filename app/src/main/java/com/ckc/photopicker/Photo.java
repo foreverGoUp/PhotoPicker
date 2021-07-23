@@ -1,6 +1,8 @@
 package com.ckc.photopicker;
 
 import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * <pre>
@@ -9,7 +11,7 @@ import android.net.Uri;
  *     version: 1.0
  * </pre>
  */
-public class Photo {
+public class Photo implements Parcelable {
 
     private String name;        //名称
     private String mimeType;    //种类，如image/jpeg
@@ -19,6 +21,31 @@ public class Photo {
     private long addTime;       //添加时间
     private String filePath;    //文件路径
     private Uri uri;            //统一资源标识符
+
+    public Photo(){}
+
+    protected Photo(Parcel in) {
+        name = in.readString();
+        mimeType = in.readString();
+        size = in.readLong();
+        width = in.readInt();
+        height = in.readInt();
+        addTime = in.readLong();
+        filePath = in.readString();
+        uri = in.readParcelable(Uri.class.getClassLoader());
+    }
+
+    public static final Creator<Photo> CREATOR = new Creator<Photo>() {
+        @Override
+        public Photo createFromParcel(Parcel in) {
+            return new Photo(in);
+        }
+
+        @Override
+        public Photo[] newArray(int size) {
+            return new Photo[size];
+        }
+    };
 
     public String getName() {
         return name;
@@ -82,5 +109,22 @@ public class Photo {
 
     public void setUri(Uri uri) {
         this.uri = uri;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(name);
+        dest.writeString(mimeType);
+        dest.writeLong(size);
+        dest.writeInt(width);
+        dest.writeInt(height);
+        dest.writeLong(addTime);
+        dest.writeString(filePath);
+        dest.writeParcelable(uri, flags);
     }
 }

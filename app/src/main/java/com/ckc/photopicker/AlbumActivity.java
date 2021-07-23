@@ -3,6 +3,7 @@ package com.ckc.photopicker;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -53,11 +54,15 @@ public class AlbumActivity extends AppCompatActivity {
     private static final int REQ_CODE_PREVIEW = 1;
 
     Uri takePhotoFileUri;
+    private PhotoPicker.Builder builder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.photo_picker_activity_album);
+        //获取选择相册参数
+        builder = getIntent().getParcelableExtra("builder");
+
         tvPreview = findViewById(R.id.photo_picker_tv_preview);
         tvAlbumName = findViewById(R.id.photo_picker_tv_album_name);
         rvPhotoList = findViewById(R.id.photo_picker_rv_album_content);
@@ -130,6 +135,20 @@ public class AlbumActivity extends AppCompatActivity {
 
         selectionCollector.setOnSelectChangeListener(onSelectChangeListener);
         Data.getInstance().selectionCollector = selectionCollector;
+
+        //点击完成
+        btComplete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                ArrayList<Photo> data = new ArrayList<>();
+                selectionCollector.selectedItems.get(0).setUri(CompressUtils.compressByQuality(AlbumActivity.this, selectionCollector.selectedItems.get(0).getUri()));
+                data.addAll(selectionCollector.selectedItems);
+                intent.putParcelableArrayListExtra("list", data);
+                setResult(Activity.RESULT_OK, intent);
+                finish();
+            }
+        });
     }
 
     private SelectionCollector.OnSelectChangeListener onSelectChangeListener = new SelectionCollector.OnSelectChangeListener() {
