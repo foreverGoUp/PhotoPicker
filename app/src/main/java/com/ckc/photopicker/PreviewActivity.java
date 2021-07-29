@@ -36,7 +36,7 @@ public class PreviewActivity extends AppCompatActivity {
     RecyclerView rvPhotoList;
     TextView tvPhotoIndex;
     Button btComplete;
-    LinearLayout llSelect;
+    LinearLayout llSelect, llOriginImage;
 //    GestureImageView ivPhoto;
     ViewPager viewPager;
 
@@ -51,6 +51,10 @@ public class PreviewActivity extends AppCompatActivity {
         rvPhotoList = findViewById(R.id.photo_picker_rv_photo_list);
         tvPhotoIndex = findViewById(R.id.photo_picker_tv_photo_index);
         llSelect = findViewById(R.id.photo_picker_ll_select);
+
+        llOriginImage = findViewById(R.id.photo_picker_ll_origin_image);
+        llOriginImage.setSelected(Data.getInstance().isOriginImage());
+
         btComplete = findViewById(R.id.photo_picker_bt_complete);
 //        ivPhoto = findViewById(R.id.photo_picker_giv_photo);
         viewPager = findViewById(R.id.photo_picker_vp);
@@ -100,6 +104,10 @@ public class PreviewActivity extends AppCompatActivity {
                 photoListAdapter.notifyItemChanged(currentPhotoPos);
                 llSelect.setSelected(selectResult > 0);
             }
+        });
+        llOriginImage.setOnClickListener(v -> {
+            Data.getInstance().setOriginImage(!Data.getInstance().isOriginImage());
+            llOriginImage.setSelected(Data.getInstance().isOriginImage());
         });
 
         ViewBigImagePagerAdapter adapter = new ViewBigImagePagerAdapter(this, photoListAdapter.data);

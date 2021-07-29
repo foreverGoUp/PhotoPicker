@@ -79,5 +79,23 @@
             android:textColor="@color/photo_picker_preview_text"
             android:textSize="17sp"
             android:text="预览"/>
+        <LinearLayout
+            android:id="@+id/photo_picker_ll_origin_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_centerInParent="true">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:background="@drawable/photo_picker_bg_preview_selection_indicator"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:textColor="@android:color/white"
+                android:text="原图"/>
+        </LinearLayout>
     </RelativeLayout>
 </LinearLayout>

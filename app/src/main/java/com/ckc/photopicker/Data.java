@@ -38,6 +38,15 @@ public class Data {
 
     List<Photo> currentAlbumPhotos;
     SelectionCollector selectionCollector;
+    private boolean isOriginImage;//是否原图
+
+    public boolean isOriginImage() {
+        return isOriginImage;
+    }
+
+    public void setOriginImage(boolean originImage) {
+        isOriginImage = originImage;
+    }
 
     public static List<PhotoFolder> getPhotoFolders(Context context) throws Exception{
         List<PhotoFolder> photoFolders = new ArrayList<>();

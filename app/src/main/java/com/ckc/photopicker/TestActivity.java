@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -27,10 +28,13 @@ public class TestActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 new PhotoPicker.Builder()
+                        .setCompressMaxSize(0)
+                        .setCompressMaxQuality(20)
                         .build()
                         .start(TestActivity.this, 1);
             }
         });
+
     }
 
     @Override
@@ -40,6 +44,7 @@ public class TestActivity extends AppCompatActivity {
             if (requestCode == 1){
                 ArrayList<Photo> list = data.getParcelableArrayListExtra("list");
                 if(list.size() > 0){
+                    Log.e("fffffff", "最终图片："+list.get(0).getFilePath());
                     try {
                         imageView.setImageBitmap(MediaStore.Images.Media.getBitmap(getContentResolver(), list.get(0).getUri()));
                     } catch (IOException e) {

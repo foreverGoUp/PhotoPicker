@@ -1,10 +1,13 @@
 package com.ckc.photopicker;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
@@ -33,14 +36,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.yalantis.ucrop.UCrop;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
 public class AlbumActivity extends AppCompatActivity {
 
-    private LinearLayout llContainer, llTitleBar, llSwitchAlbum;
+    private LinearLayout llContainer, llTitleBar, llSwitchAlbum, llOriginImage;
     private ImageView ivArrow;
     private Button btComplete;
     private TextView tvPreview, tvAlbumName;
@@ -52,14 +57,26 @@ public class AlbumActivity extends AppCompatActivity {
     private SelectionCollector selectionCollector = new SelectionCollector(9);
 
     private static final int REQ_CODE_PREVIEW = 1;
+    private static final int REQ_CODE_CROP = 2;
 
-    Uri takePhotoFileUri;
+    Uri takePhotoFileUri, croppedPhotoFileUri;
     private PhotoPicker.Builder builder;
+    private String croppedPhotoFilePath;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.photo_picker_activity_album);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED){
+                Toast.makeText(this, "请先获得存储权限", Toast.LENGTH_LONG).show();
+                finish();
+                return;
+            }
+        }
+
+
         //获取选择相册参数
         builder = getIntent().getParcelableExtra("builder");
 
@@ -68,6 +85,7 @@ public class AlbumActivity extends AppCompatActivity {
         rvPhotoList = findViewById(R.id.photo_picker_rv_album_content);
         llContainer = findViewById(R.id.photo_picker_ll_container);
         llTitleBar = findViewById(R.id.photo_picker_ll_title_bar);
+        llOriginImage = findViewById(R.id.photo_picker_ll_origin_image);
         btComplete = findViewById(R.id.photo_picker_bt_complete);
         ivArrow = findViewById(R.id.photo_picker_iv_arrow);
         llSwitchAlbum = findViewById(R.id.photo_picker_ll_switch_album);
@@ -83,8 +101,14 @@ public class AlbumActivity extends AppCompatActivity {
 //                Data.getInstance().currentAlbumPhotos = new ArrayList<>();
 //                Data.getInstance().currentAlbumPhotos.addAll(selectionCollector.selectedItems);
 //                PreviewActivity.start(AlbumActivity.this, 0, REQ_CODE_PREVIEW);
-                takePhotoFileUri = Data.takePhoto(AlbumActivity.this, 2);
+
+//                takePhotoFileUri = Data.takePhoto(AlbumActivity.this, 2);
+
             }
+        });
+        llOriginImage.setOnClickListener(v -> {
+            Data.getInstance().setOriginImage(!Data.getInstance().isOriginImage());
+            llOriginImage.setSelected(Data.getInstance().isOriginImage());
         });
 
         photoListAdapter = new PhotoListAdapter(selectionCollector);
@@ -140,15 +164,59 @@ public class AlbumActivity extends AppCompatActivity {
         btComplete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                ArrayList<Photo> data = new ArrayList<>();
-                selectionCollector.selectedItems.get(0).setUri(CompressUtils.compressByQuality(AlbumActivity.this, selectionCollector.selectedItems.get(0).getUri()));
-                data.addAll(selectionCollector.selectedItems);
-                intent.putParcelableArrayListExtra("list", data);
-                setResult(Activity.RESULT_OK, intent);
-                finish();
+                if (selectionCollector.selectedItems.size() == 0){
+                    Toast.makeText(AlbumActivity.this, "请选择一张图片", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                //剪裁
+                if (builder.enableCrop == 1 && builder.maxSelectNum == 1){
+                    String path = getExternalCacheDir().getAbsolutePath() + "/crop" + System.currentTimeMillis() + ".jpg";
+                    File file = new File(path);
+                    Uri uri = Uri.fromFile(file);
+
+                    UCrop.Options options = new UCrop.Options();
+                    options.setCircleDimmedLayer(true);
+                    options.setCompressionFormat(Bitmap.CompressFormat.WEBP);
+                    options.setCompressionQuality(100);
+                    UCrop.of(selectionCollector.selectedItems.get(0).getUri(), uri)
+                            .withAspectRatio(builder.cropWidthRatio, builder.cropHeightRatio)
+                            .withOptions(options)
+                            .start(AlbumActivity.this, REQ_CODE_CROP);
+                    croppedPhotoFilePath = path;
+                    croppedPhotoFileUri = uri;
+                    return;
+                }
+                onCompressAndComplete();
             }
         });
+    }
+
+    private void onCompressAndComplete(){
+        if (!Data.getInstance().isOriginImage()){
+            AppExecutors.getInstance().getDiskExecutor().execute(new Runnable() {
+                @Override
+                public void run() {
+                    CompressUtils.compress(AlbumActivity.this, selectionCollector.selectedItems, builder.compressMaxSize, builder.compressMaxQuality);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onComplete();
+                        }
+                    });
+                }
+            });
+        }else {
+            onComplete();
+        }
+    }
+
+    private void onComplete(){
+        Intent intent = new Intent();
+        ArrayList<Photo> data = new ArrayList<>();
+        data.addAll(selectionCollector.selectedItems);
+        intent.putParcelableArrayListExtra("list", data);
+        setResult(Activity.RESULT_OK, intent);
+        finish();
     }
 
     private SelectionCollector.OnSelectChangeListener onSelectChangeListener = new SelectionCollector.OnSelectChangeListener() {
@@ -169,9 +237,16 @@ public class AlbumActivity extends AppCompatActivity {
             selectionCollector.setOnSelectChangeListener(onSelectChangeListener);
             photoListAdapter.notifyDataSetChanged();
             selectionCollector.notifySelectChanged();
+
+            llOriginImage.setSelected(Data.getInstance().isOriginImage());
         }
-        if (requestCode == 2){
-            Data.cropPhoto(AlbumActivity.this, takePhotoFileUri, 3);
+        if (requestCode == REQ_CODE_CROP){
+//            Data.cropPhoto(AlbumActivity.this, takePhotoFileUri, 3);
+            if (resultCode == Activity.RESULT_OK){
+                selectionCollector.selectedItems.get(0).setFilePath(croppedPhotoFilePath);
+                selectionCollector.selectedItems.get(0).setUri(croppedPhotoFileUri);
+                onCompressAndComplete();
+            }
         }
     }
 
@@ -373,6 +448,7 @@ public class AlbumActivity extends AppCompatActivity {
                 }else {
                     notifyItemChanged(position);
                 }
+                Log.e("ffff", data.get(position).getUri().getPath()+"|"+data.get(position).getUri().getEncodedPath());
             });
         }
 

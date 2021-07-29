@@ -1,14 +1,16 @@
 package com.ckc.photopicker;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.RectF;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
+
+import androidx.annotation.WorkerThread;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -16,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * <pre>
@@ -26,27 +29,104 @@ import java.io.OutputStream;
  */
 public class CompressUtils {
 
-    public static Uri compressByQuality(Context context, Uri uriClipUri) {
+    @WorkerThread
+    public static void compress(Context context, List<Photo> photos, int maxSize, int maxQuality){
+        for (Photo p :
+                photos) {
+            if (maxSize > 0){
+                compressBySampling(context, p, maxSize);
+            }
+            if (maxQuality > 0){
+                compressByQuality(context, p, maxQuality, 1);
+            }
+        }
+    }
+
+    private static boolean isUseQStrategy(Context context, String filePath){
+        String appExternalDir = context.getExternalCacheDir().getAbsolutePath();
+        appExternalDir = appExternalDir.substring(0, appExternalDir.lastIndexOf("/"));
+        String appInternalDir = context.getCacheDir().getAbsolutePath();
+        appInternalDir = appInternalDir.substring(0, appInternalDir.lastIndexOf("/"));
+        Log.e("fffff", "appExternalDir="+appExternalDir+",appInternalDir="+appInternalDir+",filePath="+filePath);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !filePath.startsWith(appExternalDir) && !filePath.startsWith(appInternalDir)){
+            return true;
+        }
+        return false;
+    }
+
+    @WorkerThread
+    public static void compressBySampling(Context context, Photo photo, int maxSize){
+        String fp;
+        if (isUseQStrategy(context, photo.getFilePath())){
+            // 配置压缩的参数
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true; //获取当前图片的边界大小，而不是将整张图片载入在内存中，避免内存溢出
+            try {
+                BitmapFactory.decodeStream(context.getContentResolver().openInputStream(photo.getUri()), null, options);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            options.inSampleSize = calculateSampleSize(options, maxSize);
+            if (options.inSampleSize == 1) return;
+            options.inJustDecodeBounds = false;//设置为false，否则BitmapFactory.decodeFile返回null
+            Bitmap bitmap = null;
+            try {
+                bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(photo.getUri()), null, options);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            fp = context.getExternalCacheDir().getAbsolutePath() + "/compressBySampling_"+System.currentTimeMillis()+".jpg";
+            write(fp, bitmap2bytes(bitmap));
+        }else {
+            // 配置压缩的参数
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true; //获取当前图片的边界大小，而不是将整张图片载入在内存中，避免内存溢出
+            BitmapFactory.decodeFile(photo.getFilePath(), options);
+
+            options.inSampleSize = calculateSampleSize(options, maxSize);
+            if (options.inSampleSize == 1) return;
+            options.inJustDecodeBounds = false;//设置为false，否则BitmapFactory.decodeFile返回null
+            Bitmap bitmap = BitmapFactory.decodeFile(photo.getFilePath(), options); // 解码文件
+
+            fp = context.getExternalCacheDir().getAbsolutePath() + "/compressBySampling_"+System.currentTimeMillis()+".jpg";
+            write(fp, bitmap2bytes(bitmap));
+        }
+
+        photo.setFilePath(fp);
+        photo.setUri(Uri.fromFile(new File(fp)));
+        Log.e("ffffff", "compressBySampling成功");
+    }
+
+    @WorkerThread
+    public static void compressByQuality(Context context, Photo photo, int maxQuality, int currentTimes) {
+        double size;
+        if (isUseQStrategy(context, photo.getFilePath())){
+            size = FileSizeUtil.getFileOrFilesSize(context, photo.getUri(), FileSizeUtil.SIZETYPE_KB);
+        }else{
+            size = FileSizeUtil.getFileOrFilesSize(photo.getFilePath(), FileSizeUtil.SIZETYPE_KB);
+        }
+        Log.e("fd", "图片大小kb："+size);
+        if (size <= maxQuality) {
+            Log.e("ffffff", "compressByQuality取消压缩：size="+size);
+            return;
+        }
+
         Bitmap photoBitmap = null;
         try {
             //裁剪后的图像转成BitMap
             //photoBitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(uriClipUri));
-            photoBitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), uriClipUri);
+            photoBitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), photo.getUri());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //创建路径
         String path = context.getExternalCacheDir().getAbsolutePath();
-        //获取外部储存目录
         File file = new File(path);
-        //创建新目录, 创建此抽象路径名指定的目录，包括创建必需但不存在的父目录。
         file.mkdirs();
-        //以当前时间重新命名文件
-        long i = System.currentTimeMillis();
-        //生成新的文件
-        file = new File(file.toString() + "/compress" + i + ".jpg");
+        file = new File(file.toString() + "/compressByQuality_" + System.currentTimeMillis() + ".jpg");
         Log.e("fileNew", file.getPath());
         //创建输出流
         OutputStream out = null;
@@ -56,23 +136,27 @@ public class CompressUtils {
             e.printStackTrace();
         }
         //压缩文件，返回结果，参数分别是压缩的格式，压缩质量的百分比，输出流
-        boolean bCompress = photoBitmap.compress(Bitmap.CompressFormat.WEBP, 0, out);
+        boolean bCompress = photoBitmap.compress(Bitmap.CompressFormat.WEBP, 50, out);
         Log.e("压缩成功？", ""+bCompress);
-//        try {
-//            photoBitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(),Uri.fromFile(file));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        return Uri.fromFile(file);
+
+        photo.setFilePath(file.getAbsolutePath());
+        photo.setUri(Uri.fromFile(file));
+        Log.e("ffffff", "第"+currentTimes+"次compressByQuality成功");
+
+        if (currentTimes == 5) {
+            Log.e("ffffff", "达到压缩质量次数上限，停止compressByQuality");
+            return;
+        }
+        compressByQuality(context, photo, maxQuality, currentTimes+1);
     }
 
-    public static byte[] bitmap2bytes(Bitmap bitmap){
+    private static byte[] bitmap2bytes(Bitmap bitmap){
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.WEBP, 100, outputStream);
         return outputStream.toByteArray();
     }
 
-    public static void write(String filePath, byte[] bytes, boolean append) {
+    private static void write(String filePath, byte[] bytes) {
         File file = new File(filePath);
         try {
             file.createNewFile();
@@ -83,7 +167,7 @@ public class CompressUtils {
         FileOutputStream fout = null;
         try {
             // true表示追加写入
-            fout = new FileOutputStream(file, append);
+            fout = new FileOutputStream(file, false);
             fout.write(bytes);
         } catch (Exception e) {
             e.printStackTrace();
@@ -98,33 +182,6 @@ public class CompressUtils {
         }
     }
 
-    public static void saveImage(Context context, Bitmap bitmap){
-//        FileInputStream inputStream = new FileInputStream(new BufferedInputStream(bi));
-    }
-
-    public static Uri compressBySampling(Context context, Uri imageUri){
-        String[] filePathColumns = {MediaStore.Images.Media.DATA};
-        Cursor c = context.getContentResolver().query(imageUri, filePathColumns, null, null, null);
-        c.moveToFirst();
-        int columnIndex = c.getColumnIndex(filePathColumns[0]);
-        String imagePath = c.getString(columnIndex);
-        c.close();
-
-        Bitmap bm;
-        // 配置压缩的参数
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true; //获取当前图片的边界大小，而不是将整张图片载入在内存中，避免内存溢出
-        BitmapFactory.decodeFile(imagePath, options);
-        options.inSampleSize = calculateSampleSize(options,520);
-        options.inJustDecodeBounds = false;//设置为false，否则BitmapFactory.decodeFile返回null
-        bm = BitmapFactory.decodeFile(imagePath, options); // 解码文件
-
-        String fp = context.getExternalCacheDir().getAbsolutePath() + "/compress-"+System.currentTimeMillis()+".jpg";
-        write(fp, bitmap2bytes(bm), false);
-
-        return Uri.fromFile(new File(fp));
-    }
-
     /**
      * 计算出所需要压缩的大小
      * @param options
@@ -136,6 +193,7 @@ public class CompressUtils {
         int picWidth = options.outWidth;
         int picHeight = options.outHeight;
         int imageMaxSize = picWidth > picHeight ? picWidth:picHeight;
+        Log.e("fffff", "imageMaxSize="+imageMaxSize+",maxSize="+maxSize);
         if (imageMaxSize > maxSize) {
             while (imageMaxSize / sampleSize > maxSize) {
                 sampleSize *= 2;
