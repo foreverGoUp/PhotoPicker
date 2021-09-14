@@ -29,7 +29,9 @@ public class TestActivity extends AppCompatActivity {
             public void onClick(View v) {
                 new PhotoPicker.Builder()
                         .setCompressMaxSize(0)
-                        .setCompressMaxQuality(20)
+                        .setCompressMaxQuality(200)
+                        .setMaxSelectNum(1)
+                        .setEnableCrop(1)
                         .build()
                         .start(TestActivity.this, 1);
             }

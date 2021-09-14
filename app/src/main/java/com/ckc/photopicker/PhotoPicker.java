@@ -31,13 +31,13 @@ public class PhotoPicker {
 
     public static class Builder implements Parcelable {
         int mode = MODE_CAMERA;  //模式：相机(默认)、相册
-        int maxSelectNum;   //最大选择数量
+        int maxSelectNum = 1;   //最大选择数量
         /**
          * 启用裁剪。1：是，0：否。
          *
          * 生效条件：拍照或只选择一张图片
          * */
-        int enableCrop;
+        int enableCrop = 0;
         int cropWidthRatio = 1; //剪裁宽度比例
         int cropHeightRatio = 1;//剪裁高度比例
         /**
